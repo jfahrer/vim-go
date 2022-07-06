@@ -1,11 +1,18 @@
 " don't spam the user when Vim is started in Vi compatibility mode
 let s:cpo_save = &cpo
+let s:last_test_bang = 0
+let s:last_test_compile = 0
+let s:last_test_args = []
 set cpo&vim
 
 " Test runs `go test` in the current directory. If compile is true, it'll
 " compile the tests instead of running them (useful to catch errors in the
 " test files). Any other argument is appended to the final `go test` command.
 function! go#test#Test(bang, compile, ...) abort
+  let s:last_test_bang = a:bang
+  let s:last_test_compile = a:compile
+  let s:last_test_args = a:000
+
   let args = ["test"]
   if len(go#config#BuildTags()) > 0
     call extend(args, ["-tags", go#config#BuildTags()])
@@ -119,6 +126,12 @@ function! go#test#Func(bang, ...) abort
     call add(args, printf("-timeout=%s", timeout))
   endif
 
+  call call('go#test#Test', args)
+endfunction
+
+function! go#test#Last() abort
+  let args = [s:last_test_bang, s:last_test_compile]
+  call extend(args, s:last_test_args)
   call call('go#test#Test', args)
 endfunction
 
